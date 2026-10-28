@@ -1,0 +1,29 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "flask",
+  "buildCommand": "python scripts/verify_data.py",
+  "functions": {
+    "app.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{public/**,tests/**,docs/**,.github/**,workspace/**}"
+    }
+  },
+  "headers": [
+    {
+      "source": "/evidence/(.*).gz",
+      "headers": [
+        {"key": "Content-Encoding", "value": "gzip"},
+        {"key": "Content-Type", "value": "application/octet-stream"}
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {"key": "X-Content-Type-Options", "value": "nosniff"},
+        {"key": "Referrer-Policy", "value": "same-origin"},
+        {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'"}
+      ]
+    }
+  ],
+  "rewrites": [{"source": "/", "destination": "/index.html"}]
+}

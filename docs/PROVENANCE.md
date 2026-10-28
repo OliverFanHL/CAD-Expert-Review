@@ -1,0 +1,13 @@
+# Provenance and extraction
+
+This application was extracted on 2026-10-28 from the CADKG workspace associated with [OliverFanHL/KG-CAD-CIRP](https://github.com/OliverFanHL/KG-CAD-CIRP). The source review implementation is `cadkg/review.py` with `cadkg/web/{index.html,app.js,style.css}`. Its original queue contained 424 source CADs and 674 task–candidate records. At the user's request, the standalone queue covers all 1,816 eligible test candidates for all eleven roles, producing 19,976 assessments.
+
+The app retains the task instructions, knowledge functions and priors, source gallery, query definitions, JSON record schema, export fields, decision rules, and reviewer agreement calculation. The expanded pool manifest and family membership define a new dataset, `tmcad-test1816-human-v1`. Its binding includes the expanded pool hash and dataset ID. Each reviewer creates independent records in that dataset.
+
+Neutral IDs `Z0001` through `Z1816` follow the existing full-gallery rendering manifest. Each STEP is stored with lossless gzip compression; decompression restores its original bytes and source hash. Six-view PNGs are copied byte-for-byte from the source-bound full-gallery views. Viewer binaries use the original server normalization: subtract the triangle bounding-box center, divide by half the largest extent (minimum radius `1e-9`), and encode little-endian float32 triangle vertices. Mesh vertices retain their original triangle count. The binaries use lossless gzip compression, and saved markers use the same normalized coordinates.
+
+`data/assets.sha256.json` records all 5,448 static evidence digests. `data/data.sha256.json` records the frozen metadata digests. The build verifies those files, decompressed STEP hashes against the source manifest, evidence bindings, family membership, and triangle/image structure. Static evidence is immutable for that deployment. Local evidence requests also check decompressed STEP content; production validates bytes at build time and serves the assets from the CDN.
+
+Hosting changes include the Flask HTTP adapter, repository-relative paths, transactional SQLite/PostgreSQL persistence, compressed static evidence, streamed workspace/export responses, and standalone management commands. PostgreSQL uses per-reviewer transaction locks to preserve revision history across concurrent function instances.
+
+TMCAD is described by Zou and Zhu, *Bringing attention to CAD: Boundary representation learning via transformer*, Computer-Aided Design 189 (2025), 103940, [DOI:10.1016/j.cad.2025.103940](https://doi.org/10.1016/j.cad.2025.103940). Source CAD, dataset, and upstream materials retain their original terms and attribution requirements.

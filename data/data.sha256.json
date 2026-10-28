@@ -1,0 +1,13 @@
+{
+  "data/assets.sha256.json": "7a28ce6aea18a75398e886d32ebb43cd71cf4b72376b18b0caa88167831d432b",
+  "data/evidence.json": "c8c8aa7962ef4c4a030a6808b099b9775192d11c1ea4fecef4c9bd80634574c1",
+  "data/family_pools.json": "793adb48fcd713cfe63df0531d2b0143708c406b1f24356050f7e3e7737d77ec",
+  "data/knowledge/class_functions.csv": "d4f298bbe396978de40ab9c46a12288c9c30647956f3715735cb8bde822bb0d9",
+  "data/knowledge/functions.csv": "27cd9c787ba3cf9f0ed7798d5e70346212eecfe42139d5aea45ddf630d391d63",
+  "data/knowledge/interfaces.csv": "2b369205119659762a4490296bf967b0cb4d971d4d4be73258035d128b0d0ea7",
+  "data/knowledge/sources.json": "476882bcc7a6d184415b5c720685cb7ae86206e34cc06c8df14b78dcad5fcbec",
+  "data/pool_manifest.csv": "0075287b1a043a64746f1c4ce1950c922dc96cea0c960c33a36855548e6503bd",
+  "data/protocol.json": "3f38168cf9300f3d62f456213fa1ce5aca398181b81aca6083b4331936afaca9",
+  "data/rankings.csv": "6b6c6c72839c4fb13c3e986c2ade9cc78f1a67c064d815a338d82933c3c9f462",
+  "data/review_tasks.json": "90b90276c027c486e0c3153f42b4f0546f84a3dcf91c669e7b6b3f6767d5df81"
+}
