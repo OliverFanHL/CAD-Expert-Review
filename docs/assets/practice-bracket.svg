@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="360" viewBox="0 0 960 360" role="img" aria-labelledby="title">
+<title id="title">Practice A: inspect both attachment regions</title><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="#bf701b"/></marker></defs>
+<rect width="960" height="360" rx="16" fill="#f5f8fa"/><text x="26" y="38" font-family="Arial" font-weight="700" font-size="22" fill="#19313d">Practice A: inspect both attachment regions</text>
+<g stroke-linejoin="round" stroke-linecap="round"><path d="M125 82L295 100L295 245L125 225Z" fill="#5496a9" stroke="#234b5b" stroke-width="3"/>
+<path d="M125 225L295 245L390 310L210 288Z" fill="#2c697f" stroke="#234b5b" stroke-width="3"/>
+<path d="M125 225L210 288L210 300L125 238Z" fill="#193f51"/>
+<ellipse cx="178" cy="139" rx="14" ry="19" fill="white" stroke="#234b5b" stroke-width="3"/>
+<rect x="247" y="142" width="21" height="65" rx="10" fill="white" stroke="#234b5b" stroke-width="3"/>
+<ellipse cx="228" cy="260" rx="17" ry="8" fill="white" stroke="#234b5b" stroke-width="3"/>
+<ellipse cx="309" cy="277" rx="17" ry="8" fill="white" stroke="#234b5b" stroke-width="3"/></g>
+<g font-family="Arial" font-size="18" fill="#19313d"><path d="M488 106 L180 223" fill="none" stroke="#bf701b" stroke-width="2" marker-end="url(#arrow)"/>
+<circle cx="510" cy="105" r="15" fill="#efac2d"/><text x="510" y="111" text-anchor="middle" font-family="Arial" font-size="17" font-weight="700" fill="#19313d">1</text><text x="535" y="111" font-family="Arial" font-size="18" fill="#19313d">Check the connected body.</text><path d="M488 180 L300 245" fill="none" stroke="#bf701b" stroke-width="2" marker-end="url(#arrow)"/>
+<circle cx="510" cy="179" r="15" fill="#efac2d"/><text x="510" y="185" text-anchor="middle" font-family="Arial" font-size="17" font-weight="700" fill="#19313d">2</text><text x="535" y="185" font-family="Arial" font-size="18" fill="#19313d">Rotate to expose both faces.</text><path d="M488 256 L257 172" fill="none" stroke="#bf701b" stroke-width="2" marker-end="url(#arrow)"/>
+<circle cx="510" cy="255" r="15" fill="#efac2d"/><text x="510" y="261" text-anchor="middle" font-family="Arial" font-size="17" font-weight="700" fill="#19313d">3</text><text x="535" y="261" font-family="Arial" font-size="18" fill="#19313d">Inspect holes or slots on each face.</text></g></svg>

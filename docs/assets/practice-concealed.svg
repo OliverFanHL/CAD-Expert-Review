@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="360" viewBox="0 0 960 360" role="img" aria-labelledby="title">
+<title id="title">Practice D: choose a view that exposes the hidden region</title><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0L6 3L0 6Z" fill="#bf701b"/></marker></defs>
+<rect width="960" height="360" rx="16" fill="#f5f8fa"/><text x="26" y="38" font-family="Arial" font-weight="700" font-size="22" fill="#19313d">Practice D: choose a view that exposes the hidden region</text>
+<g stroke-linejoin="round" stroke-linecap="round"><rect x="112" y="107" width="244" height="188" rx="12" fill="#5496a9" stroke="#234b5b" stroke-width="3"/>
+<ellipse cx="228" cy="195" rx="67" ry="57" fill="none" stroke="white" stroke-width="4" stroke-dasharray="8 6"/>
+<path d="M145 79L367 109L328 264L106 235Z" fill="#bdc9cf" stroke="#687d88" stroke-width="3"/>
+<circle cx="133" cy="274" r="10" fill="white"/><circle cx="333" cy="274" r="10" fill="white"/>
+<path d="M383 88L326 176" stroke="#bf701b" stroke-width="3" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="100" y="332" font-family="Arial" font-size="16" fill="#536f7b">Dashed outline locates the concealed region.</text></g>
+<g font-family="Arial" font-size="18" fill="#19313d"><path d="M488 106 L309 110" fill="none" stroke="#bf701b" stroke-width="2" marker-end="url(#arrow)"/>
+<circle cx="510" cy="105" r="15" fill="#efac2d"/><text x="510" y="111" text-anchor="middle" font-family="Arial" font-size="17" font-weight="700" fill="#19313d">1</text><text x="535" y="111" font-family="Arial" font-size="18" fill="#19313d">Rotate around the cover.</text><path d="M488 180 L289 216" fill="none" stroke="#bf701b" stroke-width="2" marker-end="url(#arrow)"/>
+<circle cx="510" cy="179" r="15" fill="#efac2d"/><text x="510" y="185" text-anchor="middle" font-family="Arial" font-size="17" font-weight="700" fill="#19313d">2</text><text x="535" y="185" font-family="Arial" font-size="18" fill="#19313d">Try X, Y and Z cutaways.</text><path d="M488 256 L346 280" fill="none" stroke="#bf701b" stroke-width="2" marker-end="url(#arrow)"/>
+<circle cx="510" cy="255" r="15" fill="#efac2d"/><text x="510" y="261" text-anchor="middle" font-family="Arial" font-size="17" font-weight="700" fill="#19313d">3</text><text x="535" y="261" font-family="Arial" font-size="18" fill="#19313d">Name the additional view needed.</text></g></svg>

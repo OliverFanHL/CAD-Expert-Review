@@ -2,7 +2,7 @@
 
 Web app for source-bound human review of **all 1,816 eligible TMCAD test candidates across eleven engineering roles**, giving **19,976 task–candidate assessments**. It also includes eleven task definitions and eleven generic knowledge priors. A fresh clone contains the app code, instructions, compressed STEP sources, source-view images, normalized meshes, and deployment configuration.
 
-The app supports rotation, zoom, pan, cutaway, optional surface markers, source views, neutral STEP downloads, feature observations, four shortlist decisions, queue filters, autosave, resume, revision history, task and knowledge review, JSON/CSV exports, and reviewer comparison. **Cannot assess is stored as `null`.** Start with the [step-by-step annotation tutorial and worked examples](docs/ANNOTATION_TUTORIAL.md).
+The app supports rotation, zoom, pan, cutaway, optional surface markers, source views, neutral STEP downloads, feature observations, four shortlist decisions, queue filters, autosave, resume, revision history, task and knowledge review, JSON/CSV exports, and reviewer comparison. **Cannot assess is stored as `null`.** Start with the [illustrated annotation tutorial](docs/ANNOTATION_TUTORIAL.md): a numbered workspace tour, an animated viewer demonstration, a six-view inspection guide, and four worked examples.
 
 ## Dataset coverage
 
