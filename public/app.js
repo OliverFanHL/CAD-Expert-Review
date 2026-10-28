@@ -4,7 +4,11 @@ let data, state, reviewer, mode='parts', selected, selectionList=[], currentReco
 const keyOf = item => item.family_id+'|'+item.part_id;
 async function api(url, payload) {
   const r=await fetch(url,payload?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}:{});
-  const value=await r.json(); if(!r.ok) throw Error(value.error||'Request failed'); return value;
+  const body=await r.text();let value;
+  try{value=JSON.parse(body);}catch{
+    throw Error(`The review service returned an unexpected response (HTTP ${r.status}). Check /api/health and the Vercel runtime logs.`);
+  }
+  if(!r.ok) throw Error(value.error||`Request failed (HTTP ${r.status})`); return value;
 }
 function status(id,message,error=false){$(id).textContent=message;$(id).classList.toggle('error',error);}
 function element(tag,text,className){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e;}

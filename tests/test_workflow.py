@@ -157,8 +157,49 @@ def test_requests_and_production_storage_guard(app, tmp_path):
     assert client.post('/api/save', data='{}', content_type='text/plain').status_code == 415
     assert client.post('/api/save', data='x'*33_000, content_type='application/json').status_code == 413
     assert client.get('/api/bootstrap?reviewer=..').status_code == 400
-    with pytest.raises(RuntimeError, match='DATABASE_URL'):
-        create_app({'VERCEL': True, 'DATABASE_URL': None, 'WORKSPACE': str(tmp_path)})
+    production = create_app({'VERCEL': True, 'DATABASE_URL': None, 'WORKSPACE': str(tmp_path/'production')})
+    for route in ['/api/health', '/api/bootstrap', '/api/bootstrap?reviewer=fixture_expert',
+                  '/api/export?reviewer=fixture_expert']:
+        response = production.test_client().get(route)
+        assert response.status_code == 503
+        assert response.get_json()['code'] == 'database_not_configured'
+        assert 'DATABASE_URL' in response.get_json()['error']
+    assert production.test_client().post('/api/save', json=p).status_code == 503
+    assert production.extensions['review'].store is None
+    assert not (tmp_path/'production').exists()
+
+
+def test_production_database_initialization_retries_without_exposing_credentials(tmp_path, monkeypatch):
+    import psycopg
+    import app as app_module
+    calls = []
+    def failing_store(url):
+        calls.append(url)
+        raise psycopg.OperationalError('private connection details')
+    monkeypatch.setattr(app_module, 'Store', failing_store)
+    production = create_app({'VERCEL': True, 'DATABASE_URL': 'postgresql://private-credentials',
+                             'WORKSPACE': str(tmp_path/'production')})
+    assert not calls
+    for _ in range(2):
+        response = production.test_client().get('/api/health')
+        assert response.status_code == 503
+        assert response.get_json()['code'] == 'database_unavailable'
+        assert b'private' not in response.data
+    assert len(calls) == 2
+    assert not (tmp_path/'production').exists()
+
+
+def test_missing_production_database_does_not_crash_module_import(tmp_path):
+    import subprocess
+    import sys
+    env = dict(os.environ, VERCEL='1', REVIEW_WORKSPACE=str(tmp_path/'production'))
+    env.pop('DATABASE_URL', None)
+    result = subprocess.run([sys.executable, '-c',
+                             "from app import app; r=app.test_client().get('/api/health'); "
+                             "assert r.status_code==503; assert r.get_json()['code']=='database_not_configured'"],
+                            cwd=ROOT, env=env, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert not (tmp_path/'production').exists()
 
 
 @pytest.mark.parametrize('backend', ['sqlite', 'postgresql'])

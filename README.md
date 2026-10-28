@@ -60,6 +60,19 @@ Reviewer IDs and the human-review checkbox use **self-attestation**. Site visito
 
 The configuration follows Vercel's official [Flask deployment guide](https://vercel.com/docs/frameworks/backend/flask), [Python runtime guide](https://vercel.com/docs/functions/runtimes/python), and [project configuration reference](https://vercel.com/docs/project-configuration). Complete the production smoke check after your manual deployment.
 
+### If the deployed page opens but the review queue stays empty
+
+Open `/api/health` on your deployment. A `database_not_configured` response means the deployment needs `DATABASE_URL`:
+
+1. In the Vercel project, open **Storage**, create or connect a PostgreSQL database, and connect it to this project.
+2. Open **Settings → Environment Variables**. Add **`DATABASE_URL`** with the provider's PostgreSQL connection string for **Production**. If the integration created a variable with another name, copy that value into `DATABASE_URL`. Retain the provider's TLS parameters.
+3. Open **Deployments** and redeploy the latest commit. Environment changes apply to new deployments.
+4. Reopen `/api/health`. A working connection returns `status: "ok"` and `storage: "postgresql"`. Refresh the app and open your reviewer workspace.
+
+A `database_unavailable` response means the database connection or table setup failed. Check the provider's connection details, database availability, and table-creation permissions, then retry. Vercel runtime logs identify failures that happen before the app can return JSON.
+
+The CAD assets are stored in `public/evidence/`: 1,816 compressed `.step.gz` sources, 1,816 `.bin.gz` meshes, and 1,816 `.png` source-view images. You can check static delivery directly at `/evidence/Z0005.png` or `/evidence/Z0005.step.gz` while diagnosing the API.
+
 ## Expert workflow
 
 1. Enter a stable reviewer ID (2–64 letters, digits, dots, hyphens, or underscores) and attest that the decisions are your own human review. Reuse the ID to resume work.

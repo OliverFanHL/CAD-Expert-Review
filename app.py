@@ -33,11 +33,12 @@ def create_app(config=None):
                       WORKSPACE=os.getenv('REVIEW_WORKSPACE', str(ROOT/'workspace')),
                       VERCEL=os.getenv('VERCEL') == '1')
     app.config.update(config or {})
-    if app.config['VERCEL'] and not app.config['DATABASE_URL']:
-        raise RuntimeError('Set DATABASE_URL to a PostgreSQL connection string before deploying to Vercel.')
     review = Review(ROOT/'data', app.config['WORKSPACE'])
     review.verify_sources = not app.config['VERCEL']
-    review.store = Store(app.config['DATABASE_URL'], Path(app.config['WORKSPACE'])/'reviews.sqlite3')
+    # Vercel imports this module before handling requests. Initialize production
+    # storage inside the request so setup/connection errors can reach the UI.
+    if not app.config['VERCEL']:
+        review.store = Store(app.config['DATABASE_URL'], Path(app.config['WORKSPACE'])/'reviews.sqlite3')
     app.extensions['review'] = review
 
     @app.after_request
@@ -54,6 +55,22 @@ def create_app(config=None):
         if request.method == 'POST' and ((origin and origin != request.host_url.rstrip('/'))
                                        or request.headers.get('Sec-Fetch-Site') == 'cross-site'):
             return jsonify(error='Cross-origin review writes are forbidden'), 403
+        if app.config['VERCEL'] and request.path.startswith('/api/'):
+            if not app.config['DATABASE_URL']:
+                return jsonify(status='setup_required', code='database_not_configured',
+                               error='Review storage setup is incomplete. In Vercel, add a PostgreSQL connection URL '
+                                     'as DATABASE_URL for this deployment environment, then redeploy.'), 503
+            if review.store is None:
+                import psycopg
+                try:
+                    with review.lock:
+                        if review.store is None:
+                            review.store = Store(app.config['DATABASE_URL'])
+                except psycopg.Error as exc:
+                    app.logger.error('PostgreSQL initialization failed (%s)', type(exc).__name__)
+                    return jsonify(status='unavailable', code='database_unavailable',
+                                   error='Review storage could not connect. Check DATABASE_URL and the PostgreSQL '
+                                         'database in Vercel, then retry. Your changes have not been saved.'), 503
 
     @app.get('/')
     def index():
