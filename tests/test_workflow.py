@@ -183,3 +183,25 @@ def test_concurrent_instances_preserve_history(tmp_path, backend):
             from expert_review.io import object_hash
             with stores[0].connection() as db:
                 db.execute('DELETE FROM expert_reviews WHERE reviewer_key = %s', (object_hash(identifier),))
+
+
+def test_postgresql_serverless_round_trip(tmp_path):
+    database_url = os.getenv('TEST_DATABASE_URL')
+    if not database_url:
+        pytest.skip('Set TEST_DATABASE_URL for serverless PostgreSQL integration')
+    config = {'TESTING':True, 'VERCEL':True, 'DATABASE_URL':database_url, 'WORKSPACE':str(tmp_path)}
+    first = create_app(config)
+    review = first.extensions['review']
+    identifier = 'fixture_'+uuid.uuid4().hex
+    try:
+        response = first.test_client().post('/api/save', json=payload(review, reviewer=identifier))
+        assert response.status_code == 200
+        second = create_app(config)
+        state = second.test_client().get('/api/bootstrap?reviewer='+identifier).get_json()['state']
+        assert len(state['judgments']) == 1 and state['binding']['review_dataset_id'] == 'tmcad-test1816-human-v1'
+        assert second.test_client().get('/api/export?reviewer='+identifier).get_json() == state
+        assert second.test_client().get('/api/health').get_json()['storage'] == 'postgresql'
+    finally:
+        from expert_review.io import object_hash
+        with review.store.connection() as db:
+            db.execute('DELETE FROM expert_reviews WHERE reviewer_key = %s', (object_hash(identifier),))

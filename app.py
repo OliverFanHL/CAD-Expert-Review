@@ -1,5 +1,4 @@
 """Flask entrypoint recognized directly by Vercel."""
-import gzip
 import json
 import os
 from pathlib import Path
@@ -101,6 +100,8 @@ def create_app(config=None):
 
     @app.get('/api/health')
     def health():
+        with review.store.connection() as db:
+            db.execute('SELECT 1').fetchone()
         return jsonify(status='ok', storage='postgresql' if review.store.database_url else 'sqlite',
                        candidates=len(review.manifest), assessments=sum(map(len, review.pools.values())),
                        tasks=len(review.tasks))
