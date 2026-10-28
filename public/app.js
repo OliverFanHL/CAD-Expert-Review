@@ -90,7 +90,7 @@ async function move(delta){if(delta>0&&!currentRecord.decision){status('save-sta
 document.querySelectorAll('[data-decision]').forEach(b=>b.onclick=()=>{currentRecord.decision=b.dataset.decision;activeDecision('decisions','decision',currentRecord.decision);queueSave();});
 document.querySelectorAll('[data-review]').forEach(b=>b.onclick=()=>{textDecision=b.dataset.review;activeDecision('text-decisions','review',textDecision);});
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=async()=>{if(pending&&!await savePart())return;mode=b.dataset.mode;selected=null;document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active',x===b));$('family').disabled=mode!=='parts';$('queue').disabled=mode!=='parts';renderList();});
-$('start').onclick=start;$('reason').onchange=queueSave;$('notes').oninput=queueSave;
+$('start').onclick=start;$('reason').onchange=()=>{currentRecord.reason=$('reason').value;queueSave();};$('notes').oninput=queueSave;
 $('save-next').onclick=()=>move(1);$('previous').onclick=()=>move(-1);
 $('family').onchange=async()=>{if(pending&&!await savePart())return;selected=null;renderList();};$('queue').onchange=async()=>{if(pending&&!await savePart())return;selected=null;renderList();};
 $('text-save').onclick=async()=>{try{ready();const kind=mode==='tasks'?'task_reviews':'knowledge_reviews';const r=await api('/api/save',{reviewer,human_review_attested:true,kind,key:selected,record:{decision:textDecision,notes:$('text-notes').value}});state[kind][selected]=r.record;status('text-status','Saved.');renderList();}catch(e){status('text-status',e.message,true);}};
