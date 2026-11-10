@@ -13,7 +13,7 @@ For your first session, follow the workspace tour, practise the viewer controls,
 3. Click **Open my workspace**.
 4. Look for **Workspace ready** beside these controls.
 
-Keep the same ID for future sessions. Opening that ID restores your saved reviews. Use a separate practice ID, agreed with your coordinator, when learning the controls.
+Keep the same ID for future sessions. Opening that ID restores your saved reviews. **Team progress** at the top of the left sidebar shows overall coverage and an anonymous count of saved assessments per reviewer. Each candidate shows how many experts have reviewed it, and **Not reviewed by anyone** in **Review queue** lists uncovered candidates. Other reviewers' decisions and notes are never shown. Use a separate practice ID, agreed with your coordinator, when learning the controls.
 
 ### Find your way around the screen
 

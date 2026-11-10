@@ -134,6 +134,48 @@ class Review:
                 'knowledge': [{'key': key, **r, 'function_label': r['function_id'].replace('_',' ')}
                               for key,r in self.prior_keys.items()]}
 
+    def progress(self, reviewer=None, family=None):
+        """Shared labeling progress: counts only, never another reviewer's decisions, notes or ID.
+
+        Reviewers are listed anonymously (ordered by storage key); the caller's own row is
+        flagged when `reviewer` is given. Per-part counts are returned for one family at a time.
+        """
+        mine = object_hash(reviewer_id(reviewer)) if reviewer else None
+        if family is not None and family not in self.pools:
+            raise ValueError('Unknown engineering task')
+        if self.store is not None:
+            rows = self.store.progress_rows()
+        else:
+            rows = []
+            for path in sorted((self.workspace/'reviewers').glob('*.json')):
+                state = read_json(path)
+                rows.append((object_hash(state.get('reviewer')), state.get('binding'), list(state.get('judgments') or {})))
+        valid_keys = {fid+'|'+pid for fid, ids in self.pools.items() for pid in ids}
+        counts, reviewers = {}, []
+        for key, binding, keys in sorted(rows, key=lambda r: r[0]):
+            # Rows from other datasets or instructions are not progress on this frozen review.
+            if binding != self.binding:
+                continue
+            keys = valid_keys.intersection(keys)
+            if not keys and key != mine:
+                continue
+            reviewers.append({'you': key == mine, 'assessments': len(keys)})
+            for k in keys:
+                counts[k] = counts.get(k, 0) + 1
+        others = iter(range(1, len(reviewers)+1))
+        for r in reviewers:
+            r['label'] = 'You' if r['you'] else f'Reviewer {next(others)}'
+        by_family = {fid: {'total': len(ids), 'covered': 0} for fid, ids in self.pools.items()}
+        for k in counts:
+            by_family[k.split('|', 1)[0]]['covered'] += 1
+        result = {'total_assessments': len(valid_keys), 'covered': len(counts),
+                  'reviewed_records': sum(counts.values()), 'reviewers': reviewers, 'by_family': by_family}
+        if family is not None:
+            prefix = family+'|'
+            result['family'] = family
+            result['parts'] = {k[len(prefix):]: n for k, n in counts.items() if k.startswith(prefix)}
+        return result
+
     def save(self, payload):
         reviewer = reviewer_id(payload.get('reviewer'))
         if payload.get('human_review_attested') is not True:

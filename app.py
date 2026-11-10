@@ -109,6 +109,10 @@ def create_app(config=None):
             raise ValueError('Missing review decision')
         return jsonify(review.save(payload))
 
+    @app.get('/api/progress')
+    def progress():
+        return jsonify(review.progress(request.args.get('reviewer'), request.args.get('family')))
+
     @app.get('/api/export')
     def export():
         identifier = reviewer_id(request.args.get('reviewer'))

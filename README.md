@@ -84,6 +84,8 @@ The CAD assets are stored in `public/evidence/`: 1,816 compressed `.step.gz` sou
 5. Review **Generic knowledge** independently, then click **Save review**. Only accepted generic priors enter knowledge exports; candidate judgments remain separate.
 6. Click **Download review JSON** for a portable source-bound record with reviewer ID, timestamps, provenance, feature evidence, and revision history.
 
+**Team progress** (left sidebar) shows how many of the 19,976 assessments at least one expert has reviewed, coverage for the selected task, and an anonymous count per reviewer. Each candidate shows how many experts have reviewed it, and the **Not reviewed by anyone** queue lists uncovered candidates. The `/api/progress` endpoint returns counts only, never other reviewers' IDs, decisions or notes, so assessments stay independent. Counts refresh every minute and after each of your saves. Practice IDs stored in the same database count as reviewers.
+
 Use the [annotation tutorial](docs/ANNOTATION_TUTORIAL.md) for complete worked examples and the [reviewer guide](docs/REVIEWER_GUIDE.md) for pilot and disagreement handling. Each reviewer records their own decisions for the expanded cohort.
 
 ## Export, compare, or migrate reviews
@@ -92,11 +94,15 @@ Commands use local SQLite by default. To target the deployed database, set `DATA
 
 ```sh
 python manage.py export --reviewer expert_a --output exports/expert_a
+python manage.py export --all --output exports/all
 python manage.py compare --reviewers expert_a expert_b --output exports/comparison
 python manage.py import --file /path/to/existing/review.json
+python manage.py backup --output backups
 ```
 
-Export writes `review.json`, `judgments.csv`, task/knowledge reviews, and `knowledge/{functions,class_functions,interfaces}.csv`. Comparison writes `agreement.json` and `disagreements.csv`; unresolved decisions are counted separately from assessable agreement. Import accepts a human-review JSON export from this expanded dataset with matching source bindings and a new reviewer ID. Reviewer records stay in the database and downloaded exports.
+Export writes `review.json`, `judgments.csv`, task/knowledge reviews, and `knowledge/{functions,class_functions,interfaces}.csv`. Every autosave is already stored in the database, and **Download review JSON** is a copy of that stored record. Coordinators can therefore export all experts at any time without asking reviewers for files. `export --all` writes the standard export for every stored reviewer into `<output>/<reviewer>/`, plus a combined `all_judgments.csv`. It reads the database without changing it. Comparison writes `agreement.json` and `disagreements.csv`; unresolved decisions are counted separately from assessable agreement. Import accepts a human-review JSON export from this expanded dataset with matching source bindings and a new reviewer ID. Reviewer records stay in the database and downloaded exports.
+
+`backup` is read-only. It writes a new `backups/review-backup-<UTC time>/` folder (ignored by Git) with every stored row verbatim (`rows.jsonl`), one importable JSON file per reviewer, and a `manifest.json` with per-row SHA-256 hashes. It never overwrites an earlier backup. To recover one reviewer, run `import --file backups/.../reviewers/<id>__<key>.json`; import refuses to overwrite a reviewer who already exists. Schedule backups with `DATABASE_URL` set to the production database, and also enable your PostgreSQL provider's point-in-time restore.
 
 Exports retain the original record schema and add the expanded dataset ID to the source binding. The 424-part queue has a different pool binding. For subsequent retrieval evaluation, use this repository's frozen protocol, pool manifest, task definitions, and exported judgments together in a matching evaluation run. The app provides annotation, export, and reviewer comparison; retrieval evaluation is performed in the research project.
 
@@ -108,7 +114,7 @@ python scripts/verify_data.py
 python -m pytest -q
 ```
 
-Tests cover the full queue, evidence routes, decision rules, unknown handling, revisions, resume, exports, source bindings, large streamed responses, and concurrent saves. Set **`TEST_DATABASE_URL`** to a disposable PostgreSQL database to include the database integration test. GitHub Actions supplies PostgreSQL and runs it automatically. Software checks use synthetic fixture records.
+Tests cover the full queue, evidence routes, decision rules, unknown handling, revisions, resume, exports, source bindings, large streamed responses, concurrent saves, label-free shared progress, and read-only backup and restore. Set **`TEST_DATABASE_URL`** to a disposable PostgreSQL database to include the database integration test. GitHub Actions supplies PostgreSQL and runs it automatically. Software checks use synthetic fixture records.
 
 ## Repository layout
 
@@ -118,7 +124,7 @@ Tests cover the full queue, evidence routes, decision rules, unknown handling, r
 | `expert_review/` | Decision rules, provenance, export, agreement, and transactional persistence |
 | `public/` | Existing HTML/CSS/JavaScript interface and source evidence |
 | `data/` | Frozen tasks, pools, knowledge, protocol, rankings for binding only, and checksums |
-| `manage.py` | Standalone review export, import, and comparison |
+| `manage.py` | Standalone review export, import, comparison, and read-only backup |
 | `scripts/verify_data.py` | Required integrity check before deployment |
 | `vercel.json`, `pyproject.toml` | Vercel configuration and Python requirements |
 | `.env.example` | Documented production configuration |

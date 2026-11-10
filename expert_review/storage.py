@@ -33,6 +33,32 @@ class Store:
             row = db.execute(f'SELECT state FROM expert_reviews WHERE reviewer_key = {marker}', (object_hash(reviewer),)).fetchone()
         return json.loads(row[0]) if row else None
 
+    def progress_rows(self):
+        """Read-only: (reviewer_key, binding, judgment keys) for every stored reviewer.
+
+        Only keys are returned, never decisions or notes. PostgreSQL extracts them
+        server side so full review states are not transferred for progress polling.
+        """
+        with self.connection() as db:
+            if self.database_url:
+                rows = db.execute(
+                    "SELECT reviewer_key, (state::json->'binding')::text, "
+                    "COALESCE((SELECT json_agg(k) FROM json_object_keys("
+                    "COALESCE(state::json->'judgments', '{}'::json)) AS k), '[]'::json)::text "
+                    'FROM expert_reviews').fetchall()
+                return [(key, json.loads(binding), json.loads(keys)) for key, binding, keys in rows]
+            rows = db.execute('SELECT reviewer_key, state FROM expert_reviews').fetchall()
+        result = []
+        for key, text in rows:
+            state = json.loads(text)
+            result.append((key, state.get('binding'), list(state.get('judgments') or {})))
+        return result
+
+    def dump(self):
+        """Read-only snapshot of every stored row, exactly as serialized."""
+        with self.connection() as db:
+            return db.execute('SELECT reviewer_key, state FROM expert_reviews ORDER BY reviewer_key').fetchall()
+
     def update(self, reviewer, change):
         key = object_hash(reviewer)
         marker = '%s' if self.database_url else '?'

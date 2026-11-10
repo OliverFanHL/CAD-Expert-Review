@@ -1,6 +1,6 @@
 'use strict';
 const $ = id => document.getElementById(id);
-let data, state, reviewer, mode='parts', selected, selectionList=[], currentRecord={}, textDecision='', saveTimer, pending=false, editRevision=0, saving=null;
+let data, state, reviewer, mode='parts', selected, selectionList=[], currentRecord={}, textDecision='', saveTimer, pending=false, editRevision=0, saving=null, team=null;
 const keyOf = item => item.family_id+'|'+item.part_id;
 async function api(url, payload) {
   const r=await fetch(url,payload?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}:{});
@@ -18,7 +18,7 @@ async function start(){
   try{if(pending&&!await savePart())return;if(!$('attest').checked)throw Error('Confirm these will be your own human review decisions.');
     const id=$('reviewer').value.trim(); const result=await api('/api/bootstrap?reviewer='+encodeURIComponent(id));
     reviewer=id;data=result;state=result.state;selected=null;sessionStorage.setItem('reviewer',id);
-    status('identity-status',state.source==='validation_fixture'?'Synthetic UI validation only — these are not expert annotations.':'Workspace ready.');renderList();
+    status('identity-status',state.source==='validation_fixture'?'Synthetic UI validation only — these are not expert annotations.':'Workspace ready.');renderList();loadProgress();
   }catch(e){status('identity-status',e.message,true);}
 }
 function renderList(){
@@ -27,18 +27,20 @@ function renderList(){
   const items=mode==='parts'?data.parts.filter(p=>p.family_id===fid):mode==='tasks'?data.tasks:data.knowledge;
   selectionList=items.filter(p=>{
     if(mode!=='parts')return true;
-    const r=state?.judgments[keyOf(p)];return filter==='all'||filter==='unreviewed'&&!r||filter==='cannot_assess'&&r?.decision==='cannot_assess'||filter==='reviewed'&&!!r;
+    const r=state?.judgments[keyOf(p)];return filter==='all'||filter==='unreviewed'&&!r||filter==='cannot_assess'&&r?.decision==='cannot_assess'||filter==='reviewed'&&!!r||filter==='uncovered'&&!teamCount(p);
   });
   $('items').replaceChildren();
   selectionList.forEach((p,i)=>{
     const key=mode==='parts'?keyOf(p):mode==='tasks'?p.family_id:p.key;
     const record=state?.[mode==='parts'?'judgments':mode==='tasks'?'task_reviews':'knowledge_reviews'][key];
     const button=element('button',mode==='parts'?p.inspection_id:mode==='tasks'?p.label:p.class_id+' → '+p.function_label);
+    if(mode==='parts'){button.dataset.family=p.family_id;button.dataset.part=p.part_id;button.append(element('span','','team-count'));}
     if(record)button.append(element('span',record.decision.replaceAll('_',' '),'badge'));
     button.classList.toggle('selected',selected===key);button.onclick=()=>select(i);$('items').append(button);
   });
   const n=state?Object.keys(state.judgments).length:0;
   const unknown=state?Object.values(state.judgments).filter(r=>r.decision==='cannot_assess').length:0;
+  refreshTeamCounts();
   $('progress').textContent=reviewer?`${n} / ${data.parts.length} CAD decisions · ${unknown} to revisit`:'Choose a reviewer ID to begin.';
   if(!selectionList.length){$('part-panel').hidden=true;$('text-panel').hidden=true;$('intro').hidden=false;$('intro').querySelector('h1').textContent='No candidates in this queue';return;}
   if(!selectionList.some(p=>(mode==='parts'?keyOf(p):mode==='tasks'?p.family_id:p.key)===selected))select(0);
@@ -83,7 +85,8 @@ async function savePart(){
     const key=selected, revision=editRevision;
     saving=api('/api/save',{reviewer,human_review_attested:true,kind:'judgments',key,record:structuredClone(currentRecord)});
     const result=await saving;
-    state.judgments[key]=result.record;
+    const first=!state.judgments[key];
+    state.judgments[key]=result.record;if(first)countOwnSave(result.record);
     if(selected===key&&revision===editRevision){currentRecord=result.record;pending=false;status('save-status','Saved automatically.');}
     // Do not re-filter or navigate while the reviewer is editing the current candidate.
     $('progress').textContent=`${Object.keys(state.judgments).length} / ${data.parts.length} CAD decisions`;
@@ -96,7 +99,7 @@ document.querySelectorAll('[data-review]').forEach(b=>b.onclick=()=>{textDecisio
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=async()=>{if(pending&&!await savePart())return;mode=b.dataset.mode;selected=null;document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active',x===b));$('family').disabled=mode!=='parts';$('queue').disabled=mode!=='parts';renderList();});
 $('start').onclick=start;$('reason').onchange=()=>{currentRecord.reason=$('reason').value;queueSave();};$('notes').oninput=queueSave;
 $('save-next').onclick=()=>move(1);$('previous').onclick=()=>move(-1);
-$('family').onchange=async()=>{if(pending&&!await savePart())return;selected=null;renderList();};$('queue').onchange=async()=>{if(pending&&!await savePart())return;selected=null;renderList();};
+$('family').onchange=async()=>{if(pending&&!await savePart())return;selected=null;await loadProgress();renderList();};$('queue').onchange=async()=>{if(pending&&!await savePart())return;selected=null;renderList();};
 $('text-save').onclick=async()=>{try{ready();const kind=mode==='tasks'?'task_reviews':'knowledge_reviews';const r=await api('/api/save',{reviewer,human_review_attested:true,kind,key:selected,record:{decision:textDecision,notes:$('text-notes').value}});state[kind][selected]=r.record;status('text-status','Saved.');renderList();}catch(e){status('text-status',e.message,true);}};
 $('export').onclick=async()=>{try{ready();if(pending&&!await savePart())return;const a=element('a');a.href='/api/export?reviewer='+encodeURIComponent(reviewer);a.download=reviewer+'_review.json';document.body.append(a);a.click();a.remove();}catch(e){status('identity-status',e.message,true);}};
 window.addEventListener('beforeunload',e=>{if(pending){e.preventDefault();e.returnValue='';}});
@@ -153,5 +156,36 @@ class Viewer{
 }
 const viewer=new Viewer($('viewer'));
 $('reset').onclick=()=>viewer.reset();$('cut-axis').onchange=()=>viewer.draw();$('cut-position').oninput=()=>viewer.draw();$('clear-point').onclick=()=>{viewer.point=null;currentRecord.point=null;queueSave();viewer.draw();};
-async function initialize(){try{data=await api('/api/bootstrap');for(const t of data.tasks){const o=element('option',t.label);o.value=t.family_id;$('family').append(o);}for(const [key,label]of Object.entries(data.reasons)){const o=element('option',label);o.value=key;$('reason').append(o);}$('reviewer').value=sessionStorage.getItem('reviewer')||'';renderList();}catch(e){status('identity-status',e.message,true);}}
+async function initialize(){try{data=await api('/api/bootstrap');for(const t of data.tasks){const o=element('option',t.label);o.value=t.family_id;$('family').append(o);}for(const [key,label]of Object.entries(data.reasons)){const o=element('option',label);o.value=key;$('reason').append(o);}$('reviewer').value=sessionStorage.getItem('reviewer')||'';renderList();loadProgress();}catch(e){status('identity-status',e.message,true);}}
 initialize();
+
+// Shared progress: counts only. The server never returns other reviewers' IDs, decisions or notes.
+function teamCount(p){return team&&team.family===p.family_id?team.parts[p.part_id]||0:0;}
+async function loadProgress(){
+  if(!data)return;
+  try{const q=new URLSearchParams({family:$('family').value});if(reviewer)q.set('reviewer',reviewer);
+    const result=await api('/api/progress?'+q);if(result.family!==$('family').value)return;team=result;renderTeam();
+  }catch(e){$('team').hidden=false;$('team-summary').textContent='Team progress unavailable: '+e.message;}
+}
+function renderTeam(){
+  if(!team)return;$('team').hidden=false;
+  const f=team.by_family[team.family],label=data.tasks.find(t=>t.family_id===team.family)?.label||team.family;
+  $('team-bar').max=team.total_assessments;$('team-bar').value=team.covered;
+  $('team-summary').textContent=`${team.covered.toLocaleString()} of ${team.total_assessments.toLocaleString()} assessments reviewed by at least one expert`;
+  $('team-task').textContent=`${label}: ${f.covered.toLocaleString()} of ${f.total.toLocaleString()} candidates`;
+  $('team-reviewers').replaceChildren(...(team.reviewers.length?team.reviewers.map(r=>{const li=element('li',`${r.label} · ${r.assessments.toLocaleString()} assessment${r.assessments===1?'':'s'}`);li.classList.toggle('you',r.you);return li;}):[element('li','No reviews saved yet.')]));
+  refreshTeamCounts();
+}
+function refreshTeamCounts(){
+  $('items').querySelectorAll('button[data-part]').forEach(b=>{const n=teamCount({family_id:b.dataset.family,part_id:b.dataset.part}),pill=b.querySelector('.team-count');
+    pill.textContent=n?n+(n===1?' expert':' experts'):'';pill.title=n?`Reviewed by ${n} expert${n===1?'':'s'}, including you if you saved it. Decisions stay private.`:'';});
+}
+function countOwnSave(record){
+  if(!team)return;
+  const f=team.by_family[record.family_id];if(!f)return;
+  if(team.family===record.family_id){const n=team.parts[record.part_id]||0;if(!n){f.covered++;team.covered++;}team.parts[record.part_id]=n+1;}
+  team.reviewed_records++;let me=team.reviewers.find(r=>r.you);if(!me){me={label:'You',you:true,assessments:0};team.reviewers.unshift(me);}me.assessments++;
+  renderTeam();
+}
+setInterval(()=>{if(!document.hidden)loadProgress();},60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadProgress();});
